@@ -6,15 +6,16 @@
 #include <stdio.h>
 #include <string>
 
-#include "defs.h"
+#include "defs_link_list.h"
 #include "browser.h"
 #include "AsyncRequester.h"
-#include "ParserXml.h"
+//#include "ParserXml.h"
 
 //
 // SIMPLE_BROWSER class implementation
 //
-const std::wstring urlId = L"http://tetraforex.anthill.by/management/components/signals/handler.php?action=deactivateSignals&id=";
+//const std::wstring urlId = L"http://tetraforex.anthill.by/management/components/signals/handler.php?action=deactivateSignals&id=";
+static const LPCWSTR userAgent = L"Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.4 (KHTML, like Gecko) Chrome/22.0.1229.79 Safari/537.4";
 
 SIMPLE_BROWSER::SIMPLE_BROWSER(UINT nID)
 {
@@ -64,22 +65,16 @@ BOOL SIMPLE_BROWSER::Open(P_BROWSER_CONFIG pBrowserConfig)
 	DWORD dwAccessType = pBrowserConfig->fProxyAutoDiscovery ? WINHTTP_ACCESS_TYPE_NO_PROXY : 
 	WINHTTP_ACCESS_TYPE_DEFAULT_PROXY;
 
-	m_hSession = ::WinHttpOpen(L"Microsoft-Windows-HTTP-Services-Async-Sample/1.0",
-		dwAccessType,
-		WINHTTP_NO_PROXY_NAME,
-		WINHTTP_NO_PROXY_BYPASS,
-		WINHTTP_FLAG_ASYNC);
+	m_hSession = ::WinHttpOpen(userAgent, dwAccessType, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, WINHTTP_FLAG_ASYNC);
 
-	if (m_hSession == NULL) 
-	{
+	if (m_hSession == NULL) {
 		fprintf(stderr, "Browser #%d failed to open; WinHttpOpen() failed; error = %d.\n", m_nID, ::GetLastError());
 		goto error_cleanup;
 	}
 
 	m_pHomePageRequester = new ASYNC_REQUESTER(m_nRequesterIDSeed++, this);
 
-	if (m_pHomePageRequester == NULL) 
-	{
+	if (m_pHomePageRequester == NULL) {
 		fprintf(stderr, "Browser #%d failed to open; not enough memory.\n", m_nID);
 		goto error_cleanup;
 	}
@@ -93,26 +88,26 @@ BOOL SIMPLE_BROWSER::Open(P_BROWSER_CONFIG pBrowserConfig)
 		fprintf(stderr, "Browser #%d failed to open; can not initialize a requester.\n",	m_nID);
 		goto error_cleanup;
 	}
-	/*
+	
 	if (m_pBrowserConfig->pwszEmbeddedLinks == NULL)
 	{
-	fprintf(stderr, "Browser #%d failed to open; invalid list of embedded links.\n",	m_nID);
-	goto error_cleanup;
+		fprintf(stderr, "Browser #%d failed to open; invalid list of embedded links.\n", m_nID);
+		goto error_cleanup;
 	}
 
 	cchEmbeddedLinks = ::wcslen(m_pBrowserConfig->pwszEmbeddedLinks) + 1;
 
-	if (cchEmbeddedLinks < 1) 
+	if (cchEmbeddedLinks < 1)
 	{
-	fprintf(stderr, "Browser #%d failed to open; integer overflow.\n", m_nID);
-	goto error_cleanup;
+		fprintf(stderr, "Browser #%d failed to open; integer overflow.\n", m_nID);
+		goto error_cleanup;
 	}
 
 	pwszEmbeddedLinks = new WCHAR[cchEmbeddedLinks];
-	if (pwszEmbeddedLinks == NULL) 
+	if (pwszEmbeddedLinks == NULL)
 	{
-	fprintf(stderr, "Browser #%d failed to open; not enough memory.\n", m_nID);
-	goto error_cleanup;
+		fprintf(stderr, "Browser #%d failed to open; not enough memory.\n", m_nID);
+		goto error_cleanup;
 	}
 
 	::wcscpy_s(pwszEmbeddedLinks, cchEmbeddedLinks, m_pBrowserConfig->pwszEmbeddedLinks);
@@ -121,44 +116,44 @@ BOOL SIMPLE_BROWSER::Open(P_BROWSER_CONFIG pBrowserConfig)
 	PWSTR pwszLink = ::wcstok_s(pwszEmbeddedLinks, L";", &pwszContext);
 	while (pwszLink != NULL)
 	{
-	fprintf(stdout, "Browser #%d is initializing link %S...\n",	m_nID, pwszLink);
+		fprintf(stdout, "Browser #%d is initializing link %S...\n", m_nID, pwszLink);
 
-	ASYNC_REQUESTER* pNewRequester = new ASYNC_REQUESTER(m_nRequesterIDSeed++, this);
-	if (pNewRequester == NULL)	
-	{
-	fprintf(stderr, "Browser #%d failed to create a new request; not enough memory.\n",	m_nID);
-	goto next_link;
-	}
+		ASYNC_REQUESTER* pNewRequester = new ASYNC_REQUESTER(m_nRequesterIDSeed++, this);
+		if (pNewRequester == NULL)
+		{
+			fprintf(stderr, "Browser #%d failed to create a new request; not enough memory.\n", m_nID);
+			goto next_link;
+		}
 
-	if (pNewRequester->Open(pwszLink,
-	m_pBrowserConfig->fProxyAutoDiscovery,
-	m_pBrowserConfig->fEnableProxyFailover,
-	m_pBrowserConfig->nFailureRetries,
-	m_pBrowserConfig->nTimeLimit) == FALSE)
-	{
-	fprintf(stderr, "Browser #%d failed to initialize a new requester.\n", m_nID);
-	goto next_link;
-	}
+		if (pNewRequester->Open(pwszLink,
+			m_pBrowserConfig->fProxyAutoDiscovery,
+			m_pBrowserConfig->fEnableProxyFailover,
+			m_pBrowserConfig->nFailureRetries,
+			m_pBrowserConfig->nTimeLimit) == FALSE)
+		{
+			fprintf(stderr, "Browser #%d failed to initialize a new requester.\n", m_nID);
+			goto next_link;
+		}
 
-	InsertHeadList(&m_EmbeddedLinks, (PLIST_ENTRY)pNewRequester);
-	pNewRequester = NULL;
+		InsertHeadList(&m_EmbeddedLinks, (PLIST_ENTRY)pNewRequester);
+		pNewRequester = NULL;
 
 	next_link:
 
-	if (pNewRequester) 
-	{
-	if (m_pHomePageRequester->m_State == ASYNC_REQUESTER::OPENED) 
-	{
-	m_pHomePageRequester->Close();
-	}
-	delete pNewRequester;
-	}
-	pwszLink = ::wcstok_s(NULL, L";", &pwszContext);
+		if (pNewRequester)
+		{
+			if (m_pHomePageRequester->m_State == ASYNC_REQUESTER::OPENED)
+			{
+				m_pHomePageRequester->Close();
+			}
+			delete pNewRequester;
+		}
+		pwszLink = ::wcstok_s(NULL, L";", &pwszContext);
 	}
 
 	delete [] pwszEmbeddedLinks;
 	pwszEmbeddedLinks = NULL;
-	*/
+	
 	if (m_pHomePageRequester->Start() == FALSE) 
 	{
 		fprintf(stderr, "Browser #%d failed to open; can not start a requester.\n", m_nID);
@@ -201,18 +196,23 @@ BOOL SIMPLE_BROWSER::SaveToResponse(const char* buffer)
 {
 	::EnterCriticalSection(&m_LinksCritSec);
 
-	std::string temp(buffer, strlen(buffer));
-	m_stdstrResponse += temp;
+	//std::string temp(buffer, strlen(buffer));
+	//m_stdstrResponse += temp;
+
+	size_t bufferLen = ::strlen(buffer) + 1;
+	//m_pwszResponse = new char();
+	m_pwszResponse = new CHAR[bufferLen];
+	//StrCmp(m_pwszResponse, buffer);
+	::strcpy_s(m_pwszResponse, bufferLen, buffer);
 
 	::LeaveCriticalSection(&m_LinksCritSec);
 	return TRUE;
-	//size_t bufferLen = ::strlen(buffer) + 1;
-	//::strcpy_s(m_pwszResponse, bufferLen, buffer);
 }
 
-string SIMPLE_BROWSER::getResponse()
+PCHAR SIMPLE_BROWSER::getResponse()
 {
-	return m_stdstrResponse;
+	return this->m_pwszResponse;
+	//return m_stdstrResponse;
 }
 
 VOID SIMPLE_BROWSER::Close(VOID)
@@ -287,11 +287,10 @@ VOID SIMPLE_BROWSER::OnRequesterStopped(ASYNC_REQUESTER* pRequester)
 {
 	ASSERT(pRequester != NULL);
 
-	//if (m_fShutdownInProgress  && 
-	//    pRequester->m_State != ASYNC_REQUESTER::CLOSING)
-	//{
-	//    return;
-	//}
+	if (m_fShutdownInProgress  && 
+	    pRequester->m_State != ASYNC_REQUESTER::CLOSING) {
+	    return;
+	}
 
 	::EnterCriticalSection(&m_LinksCritSec);
 
@@ -300,7 +299,7 @@ VOID SIMPLE_BROWSER::OnRequesterStopped(ASYNC_REQUESTER* pRequester)
 		if (pRequester->m_State == ASYNC_REQUESTER::DATA_EXHAUSTED) 
 		{
 			fprintf(stdout, "Browser #%d fetched its Home Page, now it attempts to download all embedded lnks.\n", m_nID);
-			fprintf(stdout, pRequester->getResponse().c_str());
+			//????fprintf(stdout, pRequester->getResponse().c_str());
 			
 			OnStartChildResponse(pRequester);
 
@@ -385,10 +384,10 @@ VOID SIMPLE_BROWSER::OnStartChildResponse(ASYNC_REQUESTER* pRequester)
 	fprintf(stdout, pRequester->getResponse().c_str());
 
 	vector<wstring> genetateUrls;
-	GenerateRequests(pRequester->getResponse(), genetateUrls);
+	//GenerateRequests(pRequester->getResponse(), genetateUrls);
 	if(!genetateUrls.empty())
 	{
-		for(int i = 0; i < genetateUrls.size(); i++)
+		for(size_t i = 0; i < genetateUrls.size(); i++)
 		{
 			ASYNC_REQUESTER* pNewRequester = new ASYNC_REQUESTER(m_nRequesterIDSeed++, this);
 
@@ -423,19 +422,15 @@ next_link:
 }
 
 // Generate requests for children requestors
-BOOL SIMPLE_BROWSER::GenerateRequests(const std::string& response, vector<wstring>& generateUrls)
-{
+/*BOOL SIMPLE_BROWSER::GenerateRequests(const std::string& response, vector<wstring>& generateUrls) {
 	Signals signalsLine;
 
-	if(!response.empty())
-	{
+	if(!response.empty()) {
 		ParserXml::get_mutable_instance().getSignalsVector(response, signalsLine);
 	}
 
-	if(!signalsLine.empty())
-	{
-		for(int i = 0; i < signalsLine.size(); i++)
-		{
+	if(!signalsLine.empty()) {
+		for(int i = 0; i < signalsLine.size(); i++) {
 			wchar_t id[10] ;
 			_itow_s<10>(signalsLine[i].id, id, 10);
 			std::wstring tmp(id);
@@ -443,7 +438,7 @@ BOOL SIMPLE_BROWSER::GenerateRequests(const std::string& response, vector<wstrin
 		}
 	}
 	return TRUE;
-}
+}*/
 
 VOID SIMPLE_BROWSER::OnRequesterClosed(ASYNC_REQUESTER* pRequester)
 {

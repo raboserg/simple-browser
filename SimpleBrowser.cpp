@@ -4,7 +4,7 @@
 #include <windows.h>
 #include <winhttp.h>
 #include <string>
-#include "defs.h"
+#include "defs_link_list.h"
 #include "browser.h"
 #include "AsyncRequester.h"
 
@@ -18,7 +18,7 @@
 
 BROWSER_CONFIG BrowserConfigs[] =
 {
-/*
+	/*
 	{
         L"https://www.microsoft.com",   // home page
         TRUE,                           // use auto-proxy
@@ -32,34 +32,30 @@ BROWSER_CONFIG BrowserConfigs[] =
     }
     
     ,
-
+	*/
     {
-        L"http://www.yahoo.com",        // home page
+        L"https://www.yahoo.com",        // home page
         FALSE,                          // use default proxy (configured thru. "netsh winhttp set proxy")
         TRUE,                           // enable proxy fail-over
-        20,
+        50,
         3,                              // reties 3 times if a request should fail
         
-        L"http://shopping.yahoo.com/;"
-        L"http://finance.yahoo.com/;"
-        L"http://news.yahoo.com/",      // ";" delimited embedded links 
+        L"https://shopping.yahoo.com/;"
+        L"https://finance.yahoo.com/;"
+        L"https://news.yahoo.com/",      // ";" delimited embedded links 
     }
     
     ,
-*/
-    {
-		L"http://tetraforex.anthill.by/management/components/signals/signal.xml",
-		//L"http://groupmk.16mb.com/signals.xml",
-		 //L"http://www.cnn.com",          // home page
+	
+	{
+		L"http://edition.cnn.com/",          // home page
         FALSE,                          // use default proxy (configured thru. "netsh winhttp set proxy")
-        FALSE,                          // disable proxy fail-over
-        10,
-        0,                              // don't retry if a request should fail
-        L"http://tetraforex.anthill.by/management/components/signals/signal.xml",
-		         
-		  //L"http://www.cnn.com/WORLD/;"
-        //L"http://www.cnn.com/WEATHER/;"
-        //L"http://www.cnn.com/TRAVEL/",  // ";" delimited embedded links 
+        TRUE,                          // disable proxy fail-over
+        50,
+        3,                              // don't retry if a request should fail
+		L"http://edition.cnn.com/world/;"
+        L"http://edition.cnn.com/weather/;"
+        L"http://edition.cnn.com/travel/",  // ";" delimited embedded links 
     }
 };
 
@@ -91,24 +87,18 @@ BOOL WINAPI ConsoleEventHandler(
     ::ExitProcess(0);
 }
 
-int __cdecl main()
-{
+int __cdecl main() {
     // first mask off Ctrl-C so that we can initialize w/o worrying being interrupted
     ::SetConsoleCtrlHandler(NULL, TRUE);
 
     UINT nNumBrowserSessions = sizeof(BrowserConfigs) / sizeof (BROWSER_CONFIG);
 
-    for (UINT i = 0; i < nNumBrowserSessions; ++i)
-    {
+    for (UINT i = 0; i < nNumBrowserSessions; ++i) {
         SIMPLE_BROWSER* pBrowser = new SIMPLE_BROWSER(i);
-        if (pBrowser)
-        {
-            if (pBrowser->Open(&BrowserConfigs[i]) == TRUE)
-            {
+        if (pBrowser) {
+            if (pBrowser->Open(&BrowserConfigs[i]) == TRUE) {
                 BrowserSessions[i] = pBrowser;
-            }
-            else
-            {
+            } else {
                 delete pBrowser;
             }
         }

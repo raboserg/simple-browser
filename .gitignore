@@ -1,0 +1,10 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/x64/Debug
+/Debug
+/.vs/SimpleBrowser/v15
+/UpgradeLog.htm
+/SimpleBrowser.vcxproj.filters
+/SimpleBrowser.sln

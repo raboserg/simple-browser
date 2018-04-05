@@ -1,7 +1,7 @@
 
 #include <windows.h>
 #include <winhttp.h>
-#include "defs.h"
+#include "defs_link_list.h"
 #include "browser.h"
 #include "AsyncRequester.h"
 
@@ -26,42 +26,40 @@ ASYNC_REQUESTER::ASYNC_REQUESTER(UINT nRequesterID, SIMPLE_BROWSER* pBrowser)
 	m_dwBytesReadSoFar = 0;
 }
 
-ASYNC_REQUESTER::~ASYNC_REQUESTER()
-{
-	if (m_ProxyInfo.lpszProxy)
-	{
+ASYNC_REQUESTER::~ASYNC_REQUESTER() {
+	if (m_ProxyInfo.lpszProxy) {
 		::GlobalFree(m_ProxyInfo.lpszProxy);
 	}
-	if (m_ProxyInfo.lpszProxyBypass)
-	{
+	if (m_ProxyInfo.lpszProxyBypass) {
 		::GlobalFree(m_ProxyInfo.lpszProxyBypass);
 	}
-	if (m_pwszUrl)
-	{
+	if (m_pwszUrl) {
 		delete [] m_pwszUrl;
 	}
 }
 
-BOOL ASYNC_REQUESTER::Open(PWSTR pwszUrl, BOOL fProxyAutoDiscovery, BOOL fProxyFailover, UINT nFailureRetries,	UINT dwTimeLimit)
+BOOL ASYNC_REQUESTER::Open(
+	PWSTR pwszUrl, 
+	BOOL fProxyAutoDiscovery, 
+	BOOL fProxyFailover, 
+	UINT nFailureRetries,	
+	UINT dwTimeLimit) 
 {
 	m_fProxyFailover = fProxyFailover;
 
-	if (pwszUrl == NULL)
-	{
+	if (pwszUrl == NULL) {
 		fprintf(stderr, "Requester #%d failed to open; invalid URL.\n", m_nID);
 		goto error_exit;
 	}
 
 	SIZE_T cchUrl = ::wcslen(pwszUrl) + 1;
-	if (cchUrl < 1)
-	{
+	if (cchUrl < 1) {
 		fprintf(stderr, "Requester #%d failed to open; integer overflow.\n", m_nID);
 		goto error_exit;
 	}
 
 	m_pwszUrl = new WCHAR[cchUrl];
-	if (m_pwszUrl == NULL)
-	{
+	if (m_pwszUrl == NULL) {
 		fprintf(stderr, "Requester #%d failed to open; not enough memory.\n", m_nID);
 		goto error_exit;
 	}
@@ -74,8 +72,7 @@ BOOL ASYNC_REQUESTER::Open(PWSTR pwszUrl, BOOL fProxyAutoDiscovery, BOOL fProxyF
 
 	BOOL fProxyDiscovered = FALSE;
 
-	if (fProxyAutoDiscovery)
-	{
+	if (fProxyAutoDiscovery) {
 		fprintf(stdout, "Requester #%d is detecting proxy settings for %S...\n", m_nID, m_pwszUrl);
 
 		WINHTTP_AUTOPROXY_OPTIONS AutoProxyOptions;
@@ -86,7 +83,11 @@ BOOL ASYNC_REQUESTER::Open(PWSTR pwszUrl, BOOL fProxyAutoDiscovery, BOOL fProxyF
 		AutoProxyOptions.lpszAutoConfigUrl = NULL;
 		AutoProxyOptions.fAutoLogonIfChallenged = TRUE;
 
-		if (::WinHttpGetProxyForUrl(m_pBrowser->m_hSession, m_pwszUrl, &AutoProxyOptions, &m_ProxyInfo) == FALSE)
+		if (::WinHttpGetProxyForUrl(
+			m_pBrowser->m_hSession, 
+			m_pwszUrl, 
+			&AutoProxyOptions, 
+			&m_ProxyInfo) == FALSE) 
 		{
 			fprintf(stderr, "Requester #%d failed to discover proxy info; ::WinHttpGetProxyForUrl() failed; error = %d.\n", m_nID, ::GetLastError());
 
@@ -95,31 +96,25 @@ BOOL ASYNC_REQUESTER::Open(PWSTR pwszUrl, BOOL fProxyAutoDiscovery, BOOL fProxyF
 			pi.lpszProxy = NULL;
 			pi.lpszProxyBypass = NULL;
 
-			if (::WinHttpSetOption(m_hRequest, WINHTTP_OPTION_PROXY,	&pi, sizeof(pi)) == FALSE)
-			{
+			if (::WinHttpSetOption(m_hRequest, WINHTTP_OPTION_PROXY, &pi, sizeof(pi)) == FALSE) {
 				fprintf(stderr, "Requester #%d failed to open; ::WinHttpSetOption() failed; error = %d.\n",	m_nID, ::GetLastError());
 				goto error_exit;
 			}
-		}
-		else
-		{
+		} else {
 			fProxyDiscovered = TRUE;
 			fprintf(stdout, "Requester #%d detected the proxy settings for %S is %S.\n",	m_nID, m_pwszUrl,	m_ProxyInfo.lpszProxy );
 		}
 	}
 
-	if (!fProxyDiscovered)
-	{
+	if (!fProxyDiscovered) {
 		DWORD dwProxyInfoSize = sizeof(m_ProxyInfo);
 		 // query for global proxy config
-		::WinHttpQueryOption(NULL,	WINHTTP_OPTION_PROXY, &m_ProxyInfo, &dwProxyInfoSize);
+		::WinHttpQueryOption(NULL, WINHTTP_OPTION_PROXY, &m_ProxyInfo, &dwProxyInfoSize);
 	}
 
-	if (fProxyFailover && m_ProxyInfo.lpszProxy)
-	{
+	if (fProxyFailover && m_ProxyInfo.lpszProxy) {
 		m_pwszNextProxies = ::wcschr(m_ProxyInfo.lpszProxy, L';');
-		if (m_pwszNextProxies)
-		{
+		if (m_pwszNextProxies) {
 			++m_pwszNextProxies;
 		}
 	}
@@ -132,8 +127,7 @@ BOOL ASYNC_REQUESTER::Open(PWSTR pwszUrl, BOOL fProxyAutoDiscovery, BOOL fProxyF
 	UrlComponents.dwHostNameLength  = (DWORD)-1;
 	UrlComponents.dwUrlPathLength   = (DWORD)-1;
 
-	if (::WinHttpCrackUrl(m_pwszUrl, (DWORD)::wcslen(m_pwszUrl), 0, &UrlComponents) == NULL)
-	{
+	if (::WinHttpCrackUrl(m_pwszUrl, (DWORD)::wcslen(m_pwszUrl), 0, &UrlComponents) == NULL) {
 		fprintf(stderr, "Requester #%d failed to open; ::WinHttpCrackUrl() failed; error = %d.\n", m_nID, ::GetLastError());
 		goto error_exit;
 	}
@@ -145,8 +139,7 @@ BOOL ASYNC_REQUESTER::Open(PWSTR pwszUrl, BOOL fProxyAutoDiscovery, BOOL fProxyF
 	m_hConnect = ::WinHttpConnect(m_pBrowser->m_hSession, UrlComponents.lpszHostName, UrlComponents.nPort, 0);
 	UrlComponents.lpszHostName[UrlComponents.dwHostNameLength] = wCharSave;
 
-	if (m_hConnect == NULL)
-	{
+	if (m_hConnect == NULL) {
 		fprintf(stderr, "Requester #%d failed to open; ::WinHttpConnect() failed; error = %d.\n",	m_nID, ::GetLastError());
 		goto error_exit;
 	}
@@ -159,14 +152,12 @@ BOOL ASYNC_REQUESTER::Open(PWSTR pwszUrl, BOOL fProxyAutoDiscovery, BOOL fProxyF
 		WINHTTP_DEFAULT_ACCEPT_TYPES,
 		(UrlComponents.nScheme == INTERNET_SCHEME_HTTPS) ? WINHTTP_FLAG_SECURE : 0);
 
-	if (m_hRequest == NULL)
-	{
+	if (m_hRequest == NULL) {
 		fprintf(stderr, "Requester #%d failed to open; ::WinHttpOpenRequest() failed; error = %d.\n", m_nID, ::GetLastError());
 		goto error_exit;
 	}
 
-	if (::WinHttpSetOption(m_hRequest, WINHTTP_OPTION_PROXY, &m_ProxyInfo, sizeof(m_ProxyInfo)) == FALSE)
-	{
+	if (::WinHttpSetOption(m_hRequest, WINHTTP_OPTION_PROXY, &m_ProxyInfo, sizeof(m_ProxyInfo)) == FALSE) {
 		fprintf(stderr, "Requester #%d failed to open; ::WinHttpSetOption() failed; error = %d.\n", m_nID,::GetLastError());
 		goto error_exit;
 	}
@@ -175,8 +166,7 @@ BOOL ASYNC_REQUESTER::Open(PWSTR pwszUrl, BOOL fProxyAutoDiscovery, BOOL fProxyF
 	// can point back to this object in thoses cases we need to set the context here.
 
 	void* _this = this;
-	if (::WinHttpSetOption(m_hRequest, WINHTTP_OPTION_CONTEXT_VALUE, &_this, sizeof(this)) == FALSE)
-	{
+	if (::WinHttpSetOption(m_hRequest, WINHTTP_OPTION_CONTEXT_VALUE, &_this, sizeof(this)) == FALSE) {
 		fprintf(stderr, "Requester #%d failed to open; ::WinHttpSetOption() failed; error = %d.\n",	m_nID, ::GetLastError());
 		goto error_exit;
 	}
@@ -193,13 +183,11 @@ BOOL ASYNC_REQUESTER::Open(PWSTR pwszUrl, BOOL fProxyAutoDiscovery, BOOL fProxyF
 
 error_exit:
 
-	if (m_hRequest)
-	{
+	if (m_hRequest) {
 		::WinHttpCloseHandle(m_hRequest);
 		// m_hRequest will be set to NULL during the HANDLE_CLOSING callback
 	}
-	if (m_hConnect)
-	{
+	if (m_hConnect) {
 		::WinHttpCloseHandle(m_hConnect);
 		m_hConnect = NULL;
 	}
@@ -381,59 +369,50 @@ VOID ASYNC_REQUESTER::OnDataAvailable()
 	fprintf(stdout, "WINHTTP_CALLBACK_STATUS_DATA_AVAILABLE\n");
 }
 
-VOID ASYNC_REQUESTER::OnReadComplete(DWORD dwBytesRead)
-{
+VOID ASYNC_REQUESTER::OnReadComplete(DWORD dwBytesRead){
 	DWORD dwThreadId = ::GetCurrentThreadId();
 
-	if (m_fClosing)
-	{
+	if (m_fClosing){
 		fprintf(stdout, "[%d] The Requester #%d stops downloading from %S; it's signaled to shut down.\n", dwThreadId,	m_nID, m_pwszUrl);
 		m_State = CLOSING;
 		goto exit;
 	}
 
 	m_TimeRemaining = m_dwTimeLimit - (::GetTickCount() - m_dwStartingTime);
-	if (m_TimeRemaining <= 0)
-	{
+	if (m_TimeRemaining <= 0){
 		fprintf(stderr, "[%d] The Requester #%d timed out fetching %S; elapsed time = %d.\n", dwThreadId, m_nID,	m_pwszUrl, m_dwTimeLimit);
 		m_TimeRemaining = 0;
 		m_State = ERROR;
 		goto exit;
 	}
 
-	if (dwBytesRead == 0)
-	{
+	if (dwBytesRead == 0) {
 		m_State = DATA_EXHAUSTED;
 		fprintf(stdout, "[%d] Requester #%d has downloaded all data from from %S.\n", dwThreadId,	m_nID, m_pwszUrl);
 		goto exit;
-	}
-	else
-	{
+	} else {
 		m_State = DATA_AVAILABLE;
 		m_dwBytesReadSoFar += dwBytesRead;
 
-		std::string temp(m_ReadBuffer, strlen(m_ReadBuffer));
-		m_Response += temp;
-		//m_pBrowser->SaveToResponse(m_ReadBuffer);
+		//???std::string temp(m_ReadBuffer, strlen(m_ReadBuffer));
+		//???m_Response += temp;
+		
+		m_pBrowser->SaveToResponse(m_ReadBuffer);
 		// Read the data.
 		ZeroMemory( m_ReadBuffer, dwBytesRead+1 );
 
 		fprintf(stdout, "[%d] Requester #%d has downloaded %d bytes from from %S",	dwThreadId,	m_nID, m_dwBytesReadSoFar,	m_pwszUrl);
 
-		if (m_ContentLength == -1)
-		{
+		if (m_ContentLength == -1) {
 			fprintf(stdout, ".\n");  // total size unknown
-		}
-		else
-		{
+		} else {
 			fprintf(stdout, " (%.2f%% Complete).\n", ((float)m_dwBytesReadSoFar/m_ContentLength) * 100);
 		}
 	}
 
 	m_State = WAITING_FOR_DATA;
 
-	if (::WinHttpReadData(m_hRequest, m_ReadBuffer, dwBytesRead/*READ_BUFFER_SIZE*/, NULL) == FALSE)
-	{
+	if (::WinHttpReadData(m_hRequest, m_ReadBuffer, dwBytesRead/*READ_BUFFER_SIZE*/, NULL) == FALSE) {
 		m_dwLastError = ::GetLastError();
 		fprintf(stderr, "[%d] The Requester #%d failed to read data from %S, WinHttpReadData() failed; error = %d.\n", dwThreadId, m_nID, m_pwszUrl, m_dwLastError);
 		m_State = ERROR;
@@ -553,7 +532,7 @@ VOID ASYNC_REQUESTER::OnHandleClosing(HINTERNET hRequest)
 	{
 		m_State = CLOSED;
 		ASSERT(m_pBrowser != NULL);
-		fprintf(stdout, "[%d] Requester #%d shuts down.\n", dwThreadId, m_nID);
+		fprintf(stdout, "[%d] Requester #%d handle closing.\n", dwThreadId, m_nID);
 		//???fprintf(stdout, m_pBrowser->getResponse().c_str());
 		m_pBrowser->OnRequesterClosed(this);
 	}

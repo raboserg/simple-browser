@@ -12,7 +12,7 @@
 
 #include <windows.h>
 #include <winhttp.h>
-#include "defs.h"
+#include "defs_link_list.h"
 #include "browser.h"
 #include "AsyncRequester.h"
 
