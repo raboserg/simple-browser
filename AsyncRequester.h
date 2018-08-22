@@ -42,7 +42,7 @@ private:
 #undef ERROR
 #endif
 
-	enum STATE 
+	enum STATE
 	{
 		INIT,
 		OPENED,
@@ -92,17 +92,17 @@ private:
 	int   m_TimeRemaining;  // in millsecond
 
 	int m_nNumAttempts;
-	
+
 	std::string m_Response;
 
 	friend class SIMPLE_BROWSER;
-	friend void CALLBACK RequesterStatusCallback (
+	friend void CALLBACK RequesterStatusCallback(
 		HINTERNET hInternet,
 		DWORD_PTR dwContext,
 		DWORD dwInternetStatus,
 		LPVOID lpvStatusInformation,
 		DWORD dwStatusInformationLength
-		);
+	);
 };
 
 #endif // ASYNC_REQUESTER_H

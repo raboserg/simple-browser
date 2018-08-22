@@ -20,46 +20,46 @@ BROWSER_CONFIG BrowserConfigs[] =
 {
 	/*
 	{
-        L"https://www.microsoft.com",   // home page
-        TRUE,                           // use auto-proxy
-        TRUE,                           // enable proxy fail-over
-        30,                             // time limit (in seconds)
-        2,                              // reties 2 times if a request should fail
-        
-        L"http://www.microsoft.com/servers/;"
-        L"http://www.microsoft.com/windows/;"
-        L"http://www.microsoft.com/security/",  // ";" delimited embedded links 
-    }
-    
-    ,
+		L"https://www.microsoft.com",   // home page
+		TRUE,                           // use auto-proxy
+		TRUE,                           // enable proxy fail-over
+		30,                             // time limit (in seconds)
+		2,                              // reties 2 times if a request should fail
+
+		L"http://www.microsoft.com/servers/;"
+		L"http://www.microsoft.com/windows/;"
+		L"http://www.microsoft.com/security/",  // ";" delimited embedded links
+	}
+
+	,
 	*/
-    {
-        L"https://www.yahoo.com",        // home page
-        FALSE,                          // use default proxy (configured thru. "netsh winhttp set proxy")
-        TRUE,                           // enable proxy fail-over
-        50,
-        3,                              // reties 3 times if a request should fail
-        
-        L"https://shopping.yahoo.com/;"
-        L"https://finance.yahoo.com/;"
-        L"https://news.yahoo.com/",      // ";" delimited embedded links 
-    }
-    
-    ,
-	
+	{
+		L"https://www.yahoo.com",        // home page
+		FALSE,                          // use default proxy (configured thru. "netsh winhttp set proxy")
+		TRUE,                           // enable proxy fail-over
+		50,
+		3,                              // reties 3 times if a request should fail
+
+		L"https://shopping.yahoo.com/;"
+		L"https://finance.yahoo.com/;"
+		L"https://news.yahoo.com/",      // ";" delimited embedded links 
+	}
+
+	,
+
 	{
 		L"http://edition.cnn.com/",          // home page
-        FALSE,                          // use default proxy (configured thru. "netsh winhttp set proxy")
-        TRUE,                          // disable proxy fail-over
-        50,
-        3,                              // don't retry if a request should fail
+		FALSE,                          // use default proxy (configured thru. "netsh winhttp set proxy")
+		TRUE,                          // disable proxy fail-over
+		50,
+		3,                              // don't retry if a request should fail
 		L"http://edition.cnn.com/world/;"
-        L"http://edition.cnn.com/weather/;"
-        L"http://edition.cnn.com/travel/",  // ";" delimited embedded links 
-    }
+		L"http://edition.cnn.com/weather/;"
+		L"http://edition.cnn.com/travel/",  // ";" delimited embedded links 
+	}
 };
 
-SIMPLE_BROWSER* BrowserSessions[sizeof(BrowserConfigs) / sizeof (BROWSER_CONFIG)];
+SIMPLE_BROWSER* BrowserSessions[sizeof(BrowserConfigs) / sizeof(BROWSER_CONFIG)];
 
 
 
@@ -67,49 +67,50 @@ SIMPLE_BROWSER* BrowserSessions[sizeof(BrowserConfigs) / sizeof (BROWSER_CONFIG)
 // aborted gracefully 
 
 BOOL WINAPI ConsoleEventHandler(
-    DWORD dwCtrlType   //  control signal type
+	DWORD dwCtrlType   //  control signal type
 )
 {
-    fprintf(stdout, "Ctrl-C detected...\n");
+	fprintf(stdout, "Ctrl-C detected...\n");
 
-    UINT nNumBrowserSessions = sizeof(BrowserConfigs) / sizeof (BROWSER_CONFIG);
+	UINT nNumBrowserSessions = sizeof(BrowserConfigs) / sizeof(BROWSER_CONFIG);
 
-    for (UINT i = 0; i < nNumBrowserSessions; ++i)
-    {
-        if (BrowserSessions[i])
-        {
-            BrowserSessions[i]->Close();
-            delete BrowserSessions[i];
-            BrowserSessions[i] = NULL;
-        }
-    }
+	for (UINT i = 0; i < nNumBrowserSessions; ++i)
+	{
+		if (BrowserSessions[i])
+		{
+			BrowserSessions[i]->Close();
+			delete BrowserSessions[i];
+			BrowserSessions[i] = NULL;
+		}
+	}
 
-    ::ExitProcess(0);
+	::ExitProcess(0);
 }
 
 int __cdecl main() {
-    // first mask off Ctrl-C so that we can initialize w/o worrying being interrupted
-    ::SetConsoleCtrlHandler(NULL, TRUE);
+	// first mask off Ctrl-C so that we can initialize w/o worrying being interrupted
+	::SetConsoleCtrlHandler(NULL, TRUE);
 
-    UINT nNumBrowserSessions = sizeof(BrowserConfigs) / sizeof (BROWSER_CONFIG);
+	UINT nNumBrowserSessions = sizeof(BrowserConfigs) / sizeof(BROWSER_CONFIG);
 
-    for (UINT i = 0; i < nNumBrowserSessions; ++i) {
-        SIMPLE_BROWSER* pBrowser = new SIMPLE_BROWSER(i);
-        if (pBrowser) {
-            if (pBrowser->Open(&BrowserConfigs[i]) == TRUE) {
-                BrowserSessions[i] = pBrowser;
-            } else {
-                delete pBrowser;
-            }
-        }
-    }
+	for (UINT i = 0; i < nNumBrowserSessions; ++i) {
+		SIMPLE_BROWSER* pBrowser = new SIMPLE_BROWSER(i);
+		if (pBrowser) {
+			if (pBrowser->Open(&BrowserConfigs[i]) == TRUE) {
+				BrowserSessions[i] = pBrowser;
+			}
+			else {
+				delete pBrowser;
+			}
+		}
+	}
 
-    // now that things are started let's unmask Ctrl-C and register a custom Ctrl handler
-    // to faciliate gracefully shutdown
-    ::SetConsoleCtrlHandler(NULL, FALSE);
-    ::SetConsoleCtrlHandler(ConsoleEventHandler, TRUE);
+	// now that things are started let's unmask Ctrl-C and register a custom Ctrl handler
+	// to faciliate gracefully shutdown
+	::SetConsoleCtrlHandler(NULL, FALSE);
+	::SetConsoleCtrlHandler(ConsoleEventHandler, TRUE);
 
-    ::Sleep(INFINITE);
+	::Sleep(INFINITE);
 
-    return 0;
+	return 0;
 }

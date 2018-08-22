@@ -34,16 +34,16 @@ ASYNC_REQUESTER::~ASYNC_REQUESTER() {
 		::GlobalFree(m_ProxyInfo.lpszProxyBypass);
 	}
 	if (m_pwszUrl) {
-		delete [] m_pwszUrl;
+		delete[] m_pwszUrl;
 	}
 }
 
 BOOL ASYNC_REQUESTER::Open(
-	PWSTR pwszUrl, 
-	BOOL fProxyAutoDiscovery, 
-	BOOL fProxyFailover, 
-	UINT nFailureRetries,	
-	UINT dwTimeLimit) 
+	PWSTR pwszUrl,
+	BOOL fProxyAutoDiscovery,
+	BOOL fProxyFailover,
+	UINT nFailureRetries,
+	UINT dwTimeLimit)
 {
 	m_fProxyFailover = fProxyFailover;
 
@@ -84,10 +84,10 @@ BOOL ASYNC_REQUESTER::Open(
 		AutoProxyOptions.fAutoLogonIfChallenged = TRUE;
 
 		if (::WinHttpGetProxyForUrl(
-			m_pBrowser->m_hSession, 
-			m_pwszUrl, 
-			&AutoProxyOptions, 
-			&m_ProxyInfo) == FALSE) 
+			m_pBrowser->m_hSession,
+			m_pwszUrl,
+			&AutoProxyOptions,
+			&m_ProxyInfo) == FALSE)
 		{
 			fprintf(stderr, "Requester #%d failed to discover proxy info; ::WinHttpGetProxyForUrl() failed; error = %d.\n", m_nID, ::GetLastError());
 
@@ -97,18 +97,19 @@ BOOL ASYNC_REQUESTER::Open(
 			pi.lpszProxyBypass = NULL;
 
 			if (::WinHttpSetOption(m_hRequest, WINHTTP_OPTION_PROXY, &pi, sizeof(pi)) == FALSE) {
-				fprintf(stderr, "Requester #%d failed to open; ::WinHttpSetOption() failed; error = %d.\n",	m_nID, ::GetLastError());
+				fprintf(stderr, "Requester #%d failed to open; ::WinHttpSetOption() failed; error = %d.\n", m_nID, ::GetLastError());
 				goto error_exit;
 			}
-		} else {
+		}
+		else {
 			fProxyDiscovered = TRUE;
-			fprintf(stdout, "Requester #%d detected the proxy settings for %S is %S.\n",	m_nID, m_pwszUrl,	m_ProxyInfo.lpszProxy );
+			fprintf(stdout, "Requester #%d detected the proxy settings for %S is %S.\n", m_nID, m_pwszUrl, m_ProxyInfo.lpszProxy);
 		}
 	}
 
 	if (!fProxyDiscovered) {
 		DWORD dwProxyInfoSize = sizeof(m_ProxyInfo);
-		 // query for global proxy config
+		// query for global proxy config
 		::WinHttpQueryOption(NULL, WINHTTP_OPTION_PROXY, &m_ProxyInfo, &dwProxyInfoSize);
 	}
 
@@ -123,9 +124,9 @@ BOOL ASYNC_REQUESTER::Open(
 	ZeroMemory(&UrlComponents, sizeof(UrlComponents));
 	UrlComponents.dwStructSize = sizeof(UrlComponents);
 
-	UrlComponents.dwSchemeLength    = (DWORD)-1;
-	UrlComponents.dwHostNameLength  = (DWORD)-1;
-	UrlComponents.dwUrlPathLength   = (DWORD)-1;
+	UrlComponents.dwSchemeLength = (DWORD)-1;
+	UrlComponents.dwHostNameLength = (DWORD)-1;
+	UrlComponents.dwUrlPathLength = (DWORD)-1;
 
 	if (::WinHttpCrackUrl(m_pwszUrl, (DWORD)::wcslen(m_pwszUrl), 0, &UrlComponents) == NULL) {
 		fprintf(stderr, "Requester #%d failed to open; ::WinHttpCrackUrl() failed; error = %d.\n", m_nID, ::GetLastError());
@@ -134,13 +135,13 @@ BOOL ASYNC_REQUESTER::Open(
 
 	WCHAR wCharSave = UrlComponents.lpszHostName[UrlComponents.dwHostNameLength];
 	UrlComponents.lpszHostName[UrlComponents.dwHostNameLength] = L'\0';
-	
+
 	//Create connection
 	m_hConnect = ::WinHttpConnect(m_pBrowser->m_hSession, UrlComponents.lpszHostName, UrlComponents.nPort, 0);
 	UrlComponents.lpszHostName[UrlComponents.dwHostNameLength] = wCharSave;
 
 	if (m_hConnect == NULL) {
-		fprintf(stderr, "Requester #%d failed to open; ::WinHttpConnect() failed; error = %d.\n",	m_nID, ::GetLastError());
+		fprintf(stderr, "Requester #%d failed to open; ::WinHttpConnect() failed; error = %d.\n", m_nID, ::GetLastError());
 		goto error_exit;
 	}
 
@@ -158,7 +159,7 @@ BOOL ASYNC_REQUESTER::Open(
 	}
 
 	if (::WinHttpSetOption(m_hRequest, WINHTTP_OPTION_PROXY, &m_ProxyInfo, sizeof(m_ProxyInfo)) == FALSE) {
-		fprintf(stderr, "Requester #%d failed to open; ::WinHttpSetOption() failed; error = %d.\n", m_nID,::GetLastError());
+		fprintf(stderr, "Requester #%d failed to open; ::WinHttpSetOption() failed; error = %d.\n", m_nID, ::GetLastError());
 		goto error_exit;
 	}
 
@@ -167,7 +168,7 @@ BOOL ASYNC_REQUESTER::Open(
 
 	void* _this = this;
 	if (::WinHttpSetOption(m_hRequest, WINHTTP_OPTION_CONTEXT_VALUE, &_this, sizeof(this)) == FALSE) {
-		fprintf(stderr, "Requester #%d failed to open; ::WinHttpSetOption() failed; error = %d.\n",	m_nID, ::GetLastError());
+		fprintf(stderr, "Requester #%d failed to open; ::WinHttpSetOption() failed; error = %d.\n", m_nID, ::GetLastError());
 		goto error_exit;
 	}
 
@@ -199,7 +200,7 @@ BOOL ASYNC_REQUESTER::Start()
 	DWORD dwThreadId = ::GetCurrentThreadId();
 
 	// make sure we are in the right state to kick start a transaction
-	if (m_State != OPENED && m_State != ERROR  && m_State != DATA_EXHAUSTED)
+	if (m_State != OPENED && m_State != ERROR && m_State != DATA_EXHAUSTED)
 	{
 		return FALSE;
 	}
@@ -216,16 +217,16 @@ BOOL ASYNC_REQUESTER::Start()
 	m_dwBytesReadSoFar = 0;
 
 	m_State = SENDING;
-	
-	BOOL bSendRequest = ::WinHttpSendRequest(m_hRequest, 
-		WINHTTP_NO_ADDITIONAL_HEADERS, 0, 
-		WINHTTP_NO_REQUEST_DATA, 0,	0, 
+
+	BOOL bSendRequest = ::WinHttpSendRequest(m_hRequest,
+		WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+		WINHTTP_NO_REQUEST_DATA, 0, 0,
 		(DWORD_PTR)this);
 
 	if (bSendRequest == FALSE)
 	{
 		m_dwLastError = ::GetLastError();
-		fprintf(stderr, "[%d] The Requester #%d failed to fetch %S, WinHttpSendRequest() failed; error = %d.\n", dwThreadId,	m_nID, m_pwszUrl, m_dwLastError);
+		fprintf(stderr, "[%d] The Requester #%d failed to fetch %S, WinHttpSendRequest() failed; error = %d.\n", dwThreadId, m_nID, m_pwszUrl, m_dwLastError);
 		m_State = ERROR;
 		return FALSE;
 	}
@@ -284,7 +285,7 @@ VOID ASYNC_REQUESTER::OnHeadersAvailable()
 	m_TimeRemaining = m_dwTimeLimit - (::GetTickCount() - m_dwStartingTime);
 	if (m_TimeRemaining <= 0)
 	{
-		fprintf(stderr, "[%d] The Requester #%d timed out fetching %S; elapsed time = %d.\n", dwThreadId, m_nID,	m_pwszUrl, m_dwTimeLimit);
+		fprintf(stderr, "[%d] The Requester #%d timed out fetching %S; elapsed time = %d.\n", dwThreadId, m_nID, m_pwszUrl, m_dwTimeLimit);
 		m_TimeRemaining = 0;
 		m_State = ERROR;
 		goto exit;
@@ -296,7 +297,7 @@ VOID ASYNC_REQUESTER::OnHeadersAvailable()
 	DWORD dwSize = sizeof(DWORD);
 
 	if (::WinHttpQueryHeaders(m_hRequest,
-		WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER, 
+		WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
 		NULL,
 		&dwStatusCode,
 		&dwSize,
@@ -331,7 +332,7 @@ VOID ASYNC_REQUESTER::OnHeadersAvailable()
 	DWORD dwCLSize = sizeof(DWORD);
 
 	if (::WinHttpQueryHeaders(m_hRequest,
-		WINHTTP_QUERY_CONTENT_LENGTH | WINHTTP_QUERY_FLAG_NUMBER, 
+		WINHTTP_QUERY_CONTENT_LENGTH | WINHTTP_QUERY_FLAG_NUMBER,
 		NULL,
 		&dwContentLength,
 		&dwCLSize,
@@ -348,10 +349,10 @@ VOID ASYNC_REQUESTER::OnHeadersAvailable()
 
 	m_State = WAITING_FOR_DATA;
 
-	if (::WinHttpReadData(m_hRequest, m_ReadBuffer, READ_BUFFER_SIZE,	NULL) == FALSE)
+	if (::WinHttpReadData(m_hRequest, m_ReadBuffer, READ_BUFFER_SIZE, NULL) == FALSE)
 	{
 		m_dwLastError = ::GetLastError();
-		fprintf(stderr, "[%d] The Requester #%d failed to read data from %S, WinHttpReadData() failed; error = %d.\n", dwThreadId,	m_nID, m_pwszUrl, m_dwLastError);
+		fprintf(stderr, "[%d] The Requester #%d failed to read data from %S, WinHttpReadData() failed; error = %d.\n", dwThreadId, m_nID, m_pwszUrl, m_dwLastError);
 
 		m_State = ERROR;
 		goto exit;
@@ -369,18 +370,18 @@ VOID ASYNC_REQUESTER::OnDataAvailable()
 	fprintf(stdout, "WINHTTP_CALLBACK_STATUS_DATA_AVAILABLE\n");
 }
 
-VOID ASYNC_REQUESTER::OnReadComplete(DWORD dwBytesRead){
+VOID ASYNC_REQUESTER::OnReadComplete(DWORD dwBytesRead) {
 	DWORD dwThreadId = ::GetCurrentThreadId();
 
-	if (m_fClosing){
-		fprintf(stdout, "[%d] The Requester #%d stops downloading from %S; it's signaled to shut down.\n", dwThreadId,	m_nID, m_pwszUrl);
+	if (m_fClosing) {
+		fprintf(stdout, "[%d] The Requester #%d stops downloading from %S; it's signaled to shut down.\n", dwThreadId, m_nID, m_pwszUrl);
 		m_State = CLOSING;
 		goto exit;
 	}
 
 	m_TimeRemaining = m_dwTimeLimit - (::GetTickCount() - m_dwStartingTime);
-	if (m_TimeRemaining <= 0){
-		fprintf(stderr, "[%d] The Requester #%d timed out fetching %S; elapsed time = %d.\n", dwThreadId, m_nID,	m_pwszUrl, m_dwTimeLimit);
+	if (m_TimeRemaining <= 0) {
+		fprintf(stderr, "[%d] The Requester #%d timed out fetching %S; elapsed time = %d.\n", dwThreadId, m_nID, m_pwszUrl, m_dwTimeLimit);
 		m_TimeRemaining = 0;
 		m_State = ERROR;
 		goto exit;
@@ -388,25 +389,27 @@ VOID ASYNC_REQUESTER::OnReadComplete(DWORD dwBytesRead){
 
 	if (dwBytesRead == 0) {
 		m_State = DATA_EXHAUSTED;
-		fprintf(stdout, "[%d] Requester #%d has downloaded all data from from %S.\n", dwThreadId,	m_nID, m_pwszUrl);
+		fprintf(stdout, "[%d] Requester #%d has downloaded all data from from %S.\n", dwThreadId, m_nID, m_pwszUrl);
 		goto exit;
-	} else {
+	}
+	else {
 		m_State = DATA_AVAILABLE;
 		m_dwBytesReadSoFar += dwBytesRead;
 
 		//???std::string temp(m_ReadBuffer, strlen(m_ReadBuffer));
 		//???m_Response += temp;
-		
+
 		m_pBrowser->SaveToResponse(m_ReadBuffer);
 		// Read the data.
-		ZeroMemory( m_ReadBuffer, dwBytesRead+1 );
+		ZeroMemory(m_ReadBuffer, dwBytesRead + 1);
 
-		fprintf(stdout, "[%d] Requester #%d has downloaded %d bytes from from %S",	dwThreadId,	m_nID, m_dwBytesReadSoFar,	m_pwszUrl);
+		fprintf(stdout, "[%d] Requester #%d has downloaded %d bytes from from %S", dwThreadId, m_nID, m_dwBytesReadSoFar, m_pwszUrl);
 
 		if (m_ContentLength == -1) {
 			fprintf(stdout, ".\n");  // total size unknown
-		} else {
-			fprintf(stdout, " (%.2f%% Complete).\n", ((float)m_dwBytesReadSoFar/m_ContentLength) * 100);
+		}
+		else {
+			fprintf(stdout, " (%.2f%% Complete).\n", ((float)m_dwBytesReadSoFar / m_ContentLength) * 100);
 		}
 	}
 
@@ -440,7 +443,7 @@ VOID ASYNC_REQUESTER::OnRequestError(LPWINHTTP_ASYNC_RESULT pAsyncResult)
 	m_TimeRemaining = m_dwTimeLimit - (::GetTickCount() - m_dwStartingTime);
 	if (m_TimeRemaining <= 0)
 	{
-		fprintf(stderr, "[%d] The Requester #%d timed out fetching %S; elapsed time = %d.\n", dwThreadId, m_nID,	m_pwszUrl, m_dwTimeLimit);
+		fprintf(stderr, "[%d] The Requester #%d timed out fetching %S; elapsed time = %d.\n", dwThreadId, m_nID, m_pwszUrl, m_dwTimeLimit);
 		m_TimeRemaining = 0;
 		m_State = ERROR;
 		goto exit;
@@ -476,9 +479,9 @@ VOID ASYNC_REQUESTER::OnRequestError(LPWINHTTP_ASYNC_RESULT pAsyncResult)
 					++m_pwszNextProxies;
 				}
 
-				if (::WinHttpSetOption(m_hRequest, WINHTTP_OPTION_PROXY, &NextProxiesInfo,	sizeof(NextProxiesInfo)) == TRUE)
+				if (::WinHttpSetOption(m_hRequest, WINHTTP_OPTION_PROXY, &NextProxiesInfo, sizeof(NextProxiesInfo)) == TRUE)
 				{
-					fprintf(stdout, "[%d] The Requester #%d retries sending using a new proxy list %S.\n", dwThreadId,	m_nID, NextProxiesInfo.lpszProxy);
+					fprintf(stdout, "[%d] The Requester #%d retries sending using a new proxy list %S.\n", dwThreadId, m_nID, NextProxiesInfo.lpszProxy);
 				}
 			}
 		}
@@ -495,12 +498,12 @@ VOID ASYNC_REQUESTER::OnRequestError(LPWINHTTP_ASYNC_RESULT pAsyncResult)
 		}
 		else
 		{
-			fprintf(stderr, "[%d] The Requester #%d failed to fetch %S, WinHttpReceiveResponse() c/b failed; error = %d.\n", dwThreadId, m_nID,	m_pwszUrl, m_dwLastError);
+			fprintf(stderr, "[%d] The Requester #%d failed to fetch %S, WinHttpReceiveResponse() c/b failed; error = %d.\n", dwThreadId, m_nID, m_pwszUrl, m_dwLastError);
 		}
 	}
 	else if (m_dwErrorAPI == API_READ_DATA)
 	{
-		fprintf(stderr, "[%d] The Requester #%d failed to read data from %S, WinHttpReadData() c/b failed; error = %d\n", dwThreadId,	m_nID, m_pwszUrl, m_dwLastError);
+		fprintf(stderr, "[%d] The Requester #%d failed to read data from %S, WinHttpReadData() c/b failed; error = %d\n", dwThreadId, m_nID, m_pwszUrl, m_dwLastError);
 	}
 
 
@@ -542,7 +545,7 @@ VOID ASYNC_REQUESTER::Close(VOID)
 {
 	DWORD dwThreadId = ::GetCurrentThreadId();
 
-	if (m_State == ERROR ||	m_State == DATA_EXHAUSTED || m_State == CLOSING || m_State == OPENED)
+	if (m_State == ERROR || m_State == DATA_EXHAUSTED || m_State == CLOSING || m_State == OPENED)
 	{
 		m_State = CLOSING;
 		fprintf(stdout, "[%d] Requester #%d is shutting down.\n", dwThreadId, m_nID);
@@ -565,26 +568,26 @@ VOID ASYNC_REQUESTER::Close(VOID)
 ///TODO
 std::string ASYNC_REQUESTER::getResponse()
 {
-	if(!this->m_Response.empty())
+	if (!this->m_Response.empty())
 		return this->m_Response;
 	else
 		return "Error get response";
 }
 
-void CALLBACK RequesterStatusCallback (
-										HINTERNET hInternet,
-										DWORD_PTR dwContext,
-										DWORD dwInternetStatus,
-										LPVOID lpvStatusInformation,
-										DWORD dwStatusInformationLength
-									   )
+void CALLBACK RequesterStatusCallback(
+	HINTERNET hInternet,
+	DWORD_PTR dwContext,
+	DWORD dwInternetStatus,
+	LPVOID lpvStatusInformation,
+	DWORD dwStatusInformationLength
+)
 {
 	ASYNC_REQUESTER* pRequester = (ASYNC_REQUESTER*)dwContext;
 	ASSERT(pRequester != NULL);
 
 	ASSERT(pRequester->m_hRequest == hInternet);
 
-	switch(dwInternetStatus)
+	switch (dwInternetStatus)
 	{
 	case WINHTTP_CALLBACK_STATUS_SENDREQUEST_COMPLETE:
 		pRequester->OnSendRequestComplete();
