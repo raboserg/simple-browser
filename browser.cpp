@@ -56,14 +56,13 @@ BOOL SIMPLE_BROWSER::Open(P_BROWSER_CONFIG pBrowserConfig)
 		FALSE, // not initially set
 		NULL);
 
-	if (m_hShutdownEvent == NULL)	
+	if (m_hShutdownEvent == NULL)
 	{
-		fprintf(stderr, "Browser #%d failed to open; CreateEvent() failed; error = %d.\n", m_nID,::GetLastError());
+		fprintf(stderr, "Browser #%d failed to open; CreateEvent() failed; error = %d.\n", m_nID, ::GetLastError());
 		goto error_cleanup;
 	}
 
-	DWORD dwAccessType = pBrowserConfig->fProxyAutoDiscovery ? WINHTTP_ACCESS_TYPE_NO_PROXY : 
-	WINHTTP_ACCESS_TYPE_DEFAULT_PROXY;
+	DWORD dwAccessType = pBrowserConfig->fProxyAutoDiscovery ? WINHTTP_ACCESS_TYPE_NO_PROXY : WINHTTP_ACCESS_TYPE_DEFAULT_PROXY;
 
 	m_hSession = ::WinHttpOpen(userAgent, dwAccessType, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, WINHTTP_FLAG_ASYNC);
 
@@ -85,10 +84,10 @@ BOOL SIMPLE_BROWSER::Open(P_BROWSER_CONFIG pBrowserConfig)
 		pBrowserConfig->nFailureRetries,
 		pBrowserConfig->nTimeLimit) == FALSE)
 	{
-		fprintf(stderr, "Browser #%d failed to open; can not initialize a requester.\n",	m_nID);
+		fprintf(stderr, "Browser #%d failed to open; can not initialize a requester.\n", m_nID);
 		goto error_cleanup;
 	}
-	
+
 	if (m_pBrowserConfig->pwszEmbeddedLinks == NULL)
 	{
 		fprintf(stderr, "Browser #%d failed to open; invalid list of embedded links.\n", m_nID);
@@ -151,10 +150,10 @@ BOOL SIMPLE_BROWSER::Open(P_BROWSER_CONFIG pBrowserConfig)
 		pwszLink = ::wcstok_s(NULL, L";", &pwszContext);
 	}
 
-	delete [] pwszEmbeddedLinks;
+	delete[] pwszEmbeddedLinks;
 	pwszEmbeddedLinks = NULL;
-	
-	if (m_pHomePageRequester->Start() == FALSE) 
+
+	if (m_pHomePageRequester->Start() == FALSE)
 	{
 		fprintf(stderr, "Browser #%d failed to open; can not start a requester.\n", m_nID);
 		goto error_cleanup;
@@ -164,7 +163,7 @@ BOOL SIMPLE_BROWSER::Open(P_BROWSER_CONFIG pBrowserConfig)
 
 error_cleanup:
 
-	if (m_pHomePageRequester) 
+	if (m_pHomePageRequester)
 	{
 		if (m_pHomePageRequester->m_State == ASYNC_REQUESTER::OPENED) {
 			m_pHomePageRequester->Close();
@@ -173,20 +172,20 @@ error_cleanup:
 		m_pHomePageRequester = NULL;
 	}
 
-	if (m_hSession) 
+	if (m_hSession)
 	{
 		::WinHttpCloseHandle(m_hSession);
 		m_hSession = NULL;
 	}
-	if (m_hShutdownEvent) 
+	if (m_hShutdownEvent)
 	{
 		::CloseHandle(m_hShutdownEvent);
 		m_hShutdownEvent = NULL;
 	}
 
-	if (pwszEmbeddedLinks) 
+	if (pwszEmbeddedLinks)
 	{
-		delete [] pwszEmbeddedLinks;
+		delete[] pwszEmbeddedLinks;
 	}
 	::DeleteCriticalSection(&m_LinksCritSec);
 	return FALSE;
@@ -223,9 +222,9 @@ VOID SIMPLE_BROWSER::Close(VOID)
 
 	::EnterCriticalSection(&m_LinksCritSec);
 
-	if (m_pHomePageRequester) 
-	{ 
-		if (m_pHomePageRequester->m_State != ASYNC_REQUESTER::CLOSED) 
+	if (m_pHomePageRequester)
+	{
+		if (m_pHomePageRequester->m_State != ASYNC_REQUESTER::CLOSED)
 		{
 			m_pHomePageRequester->RequestToShutdown();
 			fNeedToWait = TRUE;
@@ -238,7 +237,7 @@ VOID SIMPLE_BROWSER::Close(VOID)
 	{
 		ASYNC_REQUESTER* pRequester = (ASYNC_REQUESTER*)entry;
 
-		if (pRequester->m_State != ASYNC_REQUESTER::CLOSED) 
+		if (pRequester->m_State != ASYNC_REQUESTER::CLOSED)
 		{
 			pRequester->RequestToShutdown();
 			fNeedToWait = TRUE;
@@ -247,21 +246,21 @@ VOID SIMPLE_BROWSER::Close(VOID)
 
 	::LeaveCriticalSection(&m_LinksCritSec);
 
-	if (fNeedToWait) 
+	if (fNeedToWait)
 	{
 		fprintf(stdout, "Browser #%d waiting for all requesters to exit...\n", m_nID);
 
-		if (::WaitForSingleObject(m_hShutdownEvent, /*60000*/INFINITE) == WAIT_TIMEOUT) 
+		if (::WaitForSingleObject(m_hShutdownEvent, /*60000*/INFINITE) == WAIT_TIMEOUT)
 		{
-			fprintf(stderr, "...and Browser #%d timed out waiting all requesters to exit... exit anyway...\n",	m_nID);
-		} 
-		else 
+			fprintf(stderr, "...and Browser #%d timed out waiting all requesters to exit... exit anyway...\n", m_nID);
+		}
+		else
 		{
 			fprintf(stdout, "...and Browser #%d is notified that all requesters are exited...\n", m_nID);
 		}
 	}
 
-	while (!IsListEmpty(&m_EmbeddedLinks)) 
+	while (!IsListEmpty(&m_EmbeddedLinks))
 	{
 		PLIST_ENTRY pEntry = RemoveHeadList(&m_EmbeddedLinks);
 		ASYNC_REQUESTER* pRequester = (ASYNC_REQUESTER*)pEntry;
@@ -269,13 +268,13 @@ VOID SIMPLE_BROWSER::Close(VOID)
 		delete pRequester;
 	}
 
-	if (m_hSession) 
+	if (m_hSession)
 	{
 		::WinHttpCloseHandle(m_hSession);
 		m_hSession = NULL;
 	}
 
-	if (m_hShutdownEvent) 
+	if (m_hShutdownEvent)
 	{
 		::CloseHandle(m_hShutdownEvent);
 		m_hShutdownEvent = NULL;
@@ -287,20 +286,20 @@ VOID SIMPLE_BROWSER::OnRequesterStopped(ASYNC_REQUESTER* pRequester)
 {
 	ASSERT(pRequester != NULL);
 
-	if (m_fShutdownInProgress  && 
-	    pRequester->m_State != ASYNC_REQUESTER::CLOSING) {
-	    return;
+	if (m_fShutdownInProgress  &&
+		pRequester->m_State != ASYNC_REQUESTER::CLOSING) {
+		return;
 	}
 
 	::EnterCriticalSection(&m_LinksCritSec);
 
-	if (pRequester == m_pHomePageRequester) 
+	if (pRequester == m_pHomePageRequester)
 	{
-		if (pRequester->m_State == ASYNC_REQUESTER::DATA_EXHAUSTED) 
+		if (pRequester->m_State == ASYNC_REQUESTER::DATA_EXHAUSTED)
 		{
 			fprintf(stdout, "Browser #%d fetched its Home Page, now it attempts to download all embedded lnks.\n", m_nID);
 			//????fprintf(stdout, pRequester->getResponse().c_str());
-			
+
 			OnStartChildResponse(pRequester);
 
 			for (PLIST_ENTRY entry = (&m_EmbeddedLinks)->Flink;
@@ -308,9 +307,9 @@ VOID SIMPLE_BROWSER::OnRequesterStopped(ASYNC_REQUESTER* pRequester)
 				entry = entry->Flink)
 			{
 				ASYNC_REQUESTER* pRequesterNew = (ASYNC_REQUESTER*)entry;
-				if (pRequesterNew->Start() == FALSE) 
+				if (pRequesterNew->Start() == FALSE)
 				{
-					fprintf(stderr, "Browser #%d failed to start a new requester.\n",	m_nID);
+					fprintf(stderr, "Browser #%d failed to start a new requester.\n", m_nID);
 				}
 			}
 
@@ -323,16 +322,16 @@ VOID SIMPLE_BROWSER::OnRequesterStopped(ASYNC_REQUESTER* pRequester)
 
 	BOOL fClosingRequest = TRUE;
 
-	if (pRequester->m_State == ASYNC_REQUESTER::CLOSING) 
+	if (pRequester->m_State == ASYNC_REQUESTER::CLOSING)
 	{
 		OnStartChildResponse(pRequester);
 		pRequester->Close();    // a live download has been aborted, now close it.
-	} 
-	else if (pRequester->m_State == ASYNC_REQUESTER::ERROR) 
+	}
+	else if (pRequester->m_State == ASYNC_REQUESTER::ERROR)
 	{
-		if (m_pBrowserConfig->nFailureRetries)	
+		if (m_pBrowserConfig->nFailureRetries)
 		{
-			switch(pRequester->m_dwLastError) 
+			switch (pRequester->m_dwLastError)
 			{
 			case ERROR_WINHTTP_CANNOT_CONNECT:
 			case ERROR_WINHTTP_TIMEOUT:
@@ -340,11 +339,11 @@ VOID SIMPLE_BROWSER::OnRequesterStopped(ASYNC_REQUESTER* pRequester)
 			case ERROR_WINHTTP_INTERNAL_ERROR:
 			case ERROR_WINHTTP_NAME_NOT_RESOLVED:
 
-				if (pRequester->Start() == FALSE) 
+				if (pRequester->Start() == FALSE)
 				{
 					pRequester->Close(); // retry upon certain errors
-				} 
-				else 
+				}
+				else
 				{
 					fClosingRequest = FALSE;
 				}
@@ -385,22 +384,22 @@ VOID SIMPLE_BROWSER::OnStartChildResponse(ASYNC_REQUESTER* pRequester)
 
 	vector<wstring> genetateUrls;
 	//GenerateRequests(pRequester->getResponse(), genetateUrls);
-	if(!genetateUrls.empty())
+	if (!genetateUrls.empty())
 	{
-		for(size_t i = 0; i < genetateUrls.size(); i++)
+		for (size_t i = 0; i < genetateUrls.size(); i++)
 		{
 			ASYNC_REQUESTER* pNewRequester = new ASYNC_REQUESTER(m_nRequesterIDSeed++, this);
 
-			if (pNewRequester == NULL)	
+			if (pNewRequester == NULL)
 			{
-				fprintf(stderr, "Browser #%d failed to create a new request; not enough memory.\n",	m_nID);
+				fprintf(stderr, "Browser #%d failed to create a new request; not enough memory.\n", m_nID);
 				goto next_link;
 			}
 
 			SIZE_T ccLink = ::wcslen(genetateUrls[i].c_str()) + 1;
 			PWSTR pwszLink = new WCHAR[ccLink];
 			::wcscpy_s(pwszLink, ccLink, genetateUrls[i].c_str());
-			
+
 			if (pNewRequester->Open(pwszLink,
 				m_pBrowserConfig->fProxyAutoDiscovery,
 				m_pBrowserConfig->fEnableProxyFailover,
@@ -413,8 +412,8 @@ VOID SIMPLE_BROWSER::OnStartChildResponse(ASYNC_REQUESTER* pRequester)
 
 			InsertHeadList(&m_EmbeddedLinks, (PLIST_ENTRY)pNewRequester);
 			pNewRequester = NULL;
-next_link:
-			delete [] pwszLink;
+		next_link:
+			delete[] pwszLink;
 			delete pNewRequester;
 		}
 	}
