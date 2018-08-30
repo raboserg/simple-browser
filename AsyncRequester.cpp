@@ -5,6 +5,7 @@
 #include "browser.h"
 #include "AsyncRequester.h"
 
+
 #include <stdio.h>
 
 ASYNC_REQUESTER::ASYNC_REQUESTER(UINT nRequesterID, SIMPLE_BROWSER* pBrowser)
