@@ -109,7 +109,6 @@ int __cdecl main() {
 	// to faciliate gracefully shutdown
 	::SetConsoleCtrlHandler(NULL, FALSE);
 	::SetConsoleCtrlHandler(ConsoleEventHandler, TRUE);
-
 	::Sleep(INFINITE);
 
 	return 0;
